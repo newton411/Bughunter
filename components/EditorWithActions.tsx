@@ -12,9 +12,12 @@ export default function EditorWithActions() {
   const runAnalysis = async () => {
     setLoading(true)
     try {
+      // attach user's access token
+      const session = await (await import('../lib/supabaseClient')).supabase.auth.getSession()
+      const token = session?.data?.session?.access_token
       const res = await fetch('/api/agent', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ code, language: 'solidity' })
       })
       const payload = await res.json()
@@ -31,13 +34,14 @@ export default function EditorWithActions() {
     try {
       const title = prompt('Title for report', 'Analysis') || 'Analysis'
       const summary = (analysis || '').slice(0, 1000)
-      // For now, require the user to paste their user_id (simpler); in a later step we can pull session.
-      const user_id = prompt('Your user_id (from Supabase auth)') || ''
-      if (!user_id) return alert('user_id required to save report')
+      const supabaseModule = await import('../lib/supabaseClient')
+      const session = await supabaseModule.supabase.auth.getSession()
+      const token = session?.data?.session?.access_token
+      if (!token) return alert('You must be signed in to save reports')
       const res = await fetch('/api/reports', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id, title, summary, analysis, severity: 'Informational' })
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ title, summary, analysis, severity: 'Informational' })
       })
       const payload = await res.json()
       if (!payload.ok) throw new Error(payload.error || 'Save failed')

@@ -65,4 +65,14 @@ To enable a full CopilotKit integration:
 3. Replace the placeholder UI in `components/CopilotKitUI.tsx` with real CopilotKit components and wiring.
 
 Note: For streaming responses, implement server-side streaming endpoints and client handling in the CopilotKit UI.
+
+Security & production notes
+--------------------------
+
+- Ensure `SUPABASE_SERVICE_ROLE_KEY` is set in server env for admin operations.
+- Protect `COPILOT_SDK_KEY` and `OPENAI_API_KEY` as server-only secrets.
+- The app now requires an `Authorization: Bearer <access_token>` header for `/api/agent` and `/api/reports`. Use `supabase.auth.getSession()` on the client to retrieve the user's access token and include it in requests.
+- Rate limiting is implemented in-memory for the agent endpoint; replace with Redis or another durable store in production.
+- Input size is limited by `MAX_CODE_CHARS` env (default 20000). Adjust as needed.
+- Never execute uploaded code; analyses are text-only and PoC execution must be sandboxed externally.
 # Bughunter

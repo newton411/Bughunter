@@ -4,9 +4,19 @@ import supabaseAdmin from '../../../lib/supabaseAdmin'
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const { user_id, title, summary, analysis, severity } = body
+    const { title, summary, analysis, severity } = body
 
-    if (!user_id) return NextResponse.json({ ok: false, error: 'Missing user_id' }, { status: 400 })
+    // Require auth header
+    const auth = req.headers.get('authorization')
+    if (!auth || !auth.startsWith('Bearer ')) {
+      return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
+    }
+    const token = auth.split(' ')[1]
+    const { data: userData, error: userErr } = await supabaseAdmin.auth.getUser(token)
+    if (userErr || !userData?.user) {
+      return NextResponse.json({ ok: false, error: 'Invalid auth token' }, { status: 401 })
+    }
+    const user_id = userData.user.id
 
     const { data, error } = await supabaseAdmin.from('reports').insert([
       { user_id, title, summary, analysis, severity }
