@@ -64,7 +64,7 @@ To enable a full CopilotKit integration:
 2. Provide `COPILOT_SDK_BASE_URL` and `COPILOT_SDK_KEY` (or configure LangGraph) so server-side calls via `lib/copilotClient.ts` reach your LLM gateway.
 3. Replace the placeholder UI in `components/CopilotKitUI.tsx` with real CopilotKit components and wiring.
 
-Note: For streaming responses, implement server-side streaming endpoints and client handling in the CopilotKit UI.
+Note: For streaming responses, a server streaming endpoint is provided at `app/api/agent/stream/route.ts` and the client consumes incremental chunks in `components/CopilotKitUI.tsx`.
 
 Security & production notes
 --------------------------

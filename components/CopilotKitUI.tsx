@@ -16,14 +16,45 @@ export default function CopilotKitUI() {
     setLoading(true)
 
     try {
-      const res = await fetch('/api/agent', {
+      // fetch streaming endpoint and consume incremental chunks
+      const supabaseModule = await import('../lib/supabaseClient')
+      const session = await supabaseModule.supabase.auth.getSession()
+      const token = session?.data?.session?.access_token
+      const res = await fetch('/api/agent/stream', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ code: codeToSend, language: 'auto' })
       })
-      const json = await res.json()
-      if (!json.ok) throw new Error(json.error || 'Agent error')
-      setMessages((m) => [...m, { role: 'assistant', text: json.analysis }])
+
+      if (!res.ok) {
+        const txt = await res.text()
+        throw new Error(txt || 'Agent stream failed')
+      }
+
+      const reader = res.body?.getReader()
+      if (!reader) throw new Error('No stream reader available')
+
+      // create assistant message slot
+      setMessages((m) => [...m, { role: 'assistant', text: '' }])
+      const decoder = new TextDecoder()
+      let done = false
+      let lastChunk = ''
+      while (!done) {
+        const { value, done: rDone } = await reader.read()
+        done = rDone
+        if (value) {
+          const chunk = decoder.decode(value)
+          lastChunk += chunk
+          // Append chunk to last assistant message
+          setMessages((prev) => {
+            const copy = prev.slice()
+            const last = copy.pop() ?? { role: 'assistant', text: '' }
+            last.text = (last.text || '') + chunk
+            copy.push(last)
+            return copy
+          })
+        }
+      }
       // scroll to bottom
       setTimeout(() => listRef.current?.scrollTo({ top: listRef.current.scrollHeight }), 50)
     } catch (err: any) {

@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "next.config.js", "use": "@vercel/next" }
+  ],
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "@next_public_supabase_url",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@next_public_supabase_anon_key",
+    "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key",
+    "COPILOT_SDK_KEY": "@copilot_sdk_key",
+    "COPILOT_SDK_BASE_URL": "@copilot_sdk_base_url",
+    "OPENAI_API_KEY": "@openai_api_key"
+  }
+}
